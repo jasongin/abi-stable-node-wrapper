@@ -377,7 +377,7 @@ inline std::string String::Utf8Value() const {
   if (status != napi_ok) throw Error::New(Env());
 
   std::string value;
-  value.resize(length);
+  value.resize(length + 1);
   status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), nullptr);
   if (status != napi_ok) throw Error::New(Env());
   return value;
@@ -389,7 +389,7 @@ inline std::u16string String::Utf16Value() const {
   if (status != napi_ok) throw Error::New(Env());
 
   std::u16string value;
-  value.resize(length);
+  value.resize(length + 1);
   status = napi_get_value_string_utf16(_env, _value, &value[0], value.capacity(), nullptr);
   if (status != napi_ok) throw Error::New(Env());
   return value;
@@ -1004,10 +1004,11 @@ inline Buffer Buffer::Copy(Napi::Env env, const char* data, size_t size) {
   return Buffer(env, value);
 }
 
-inline Buffer::Buffer() : Object() {
+inline Buffer::Buffer() : Object(), _length(0), _data(nullptr) {
 }
 
-inline Buffer::Buffer(napi_env env, napi_value value) : Object(env, value) {
+inline Buffer::Buffer(napi_env env, napi_value value)
+  : Object(env, value), _length(0), _data(nullptr) {
 }
 
 inline Buffer::Buffer(napi_env env, napi_value value, size_t length, char* data)

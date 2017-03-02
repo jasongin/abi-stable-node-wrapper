@@ -473,7 +473,7 @@ namespace Napi {
 
     Reference();
     Reference(napi_env env, napi_ref ref);
-    ~Reference();
+    virtual ~Reference();
 
     // A reference can be moved but cannot be copied.
     Reference(Reference<T>&& other);
