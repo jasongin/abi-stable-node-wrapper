@@ -1,25 +1,29 @@
-﻿#ifndef SRC_NAPI_INL_H_
-#define SRC_NAPI_INL_H_
+﻿#ifndef SRC_NODE_API_INL_H_
+#define SRC_NODE_API_INL_H_
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAPI C++ Wrapper Classes
+// Node API C++ Wrapper Classes
 //
-// Inline header-only implementations for "NAPI" ABI-stable C APIs for Node.js.
+// Inline header-only implementations for ABI-stable Node API C++ wrappers.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cassert>
 
-namespace Napi {
+namespace Node {
 
 // Adapt the NODE_MODULE registration function to NAPI:
 //  - Wrap the arguments in NAPI wrappers.
 //  - Catch any NAPI errors that might be thrown.
-#define NAPI_MODULE(modname, regfunc)                                                 \
+#ifdef NODE_MODULE
+#undef NODE_MODULE
+#endif
+
+#define NODE_MODULE(modname, regfunc)                                                 \
   void __napi_ ## regfunc(napi_env env, napi_value exports, napi_value module) {      \
     try {                                                                             \
-      regfunc(Napi::Env(env), Napi::Object(env, exports), Napi::Object(env, module)); \
+      regfunc(Node::Env(env), Node::Object(env, exports), Node::Object(env, module)); \
     }                                                                                 \
-    catch (const Napi::Error&) {                                                      \
+    catch (const Node::Error&) {                                                      \
       assert(false); /* Uncaught error in native module registration. */              \
     }                                                                                 \
   }                                                                                   \
@@ -86,7 +90,7 @@ inline PropertyName::operator napi_propertyname() const {
 }
 
 inline Env PropertyName::Env() const {
-  return Napi::Env(_env);
+  return Node::Env(_env);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +123,7 @@ inline bool Value::StrictEquals(const Value& other) const {
 }
 
 inline Env Value::Env() const {
-  return Napi::Env(_env);
+  return Node::Env(_env);
 }
 
 inline napi_valuetype Value::Type() const {
@@ -246,17 +250,17 @@ inline Object Value::ToObject() const {
 // Boolean class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Boolean Boolean::New(Napi::Env env, bool val) {
+inline Boolean Boolean::New(Node::Env env, bool val) {
   napi_value value;
   napi_status status = napi_create_boolean(env, val, &value);
   if (status != napi_ok) throw Error::New(env);
   return Boolean(env, value);
 }
 
-inline Boolean::Boolean() : Napi::Value() {
+inline Boolean::Boolean() : Node::Value() {
 }
 
-inline Boolean::Boolean(napi_env env, napi_value value) : Napi::Value(env, value) {
+inline Boolean::Boolean(napi_env env, napi_value value) : Node::Value(env, value) {
 }
 
 inline Boolean::operator bool() const {
@@ -274,7 +278,7 @@ inline bool Boolean::Value() const {
 // Number class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Number Number::New(Napi::Env env, double val) {
+inline Number Number::New(Node::Env env, double val) {
   napi_value value;
   napi_status status = napi_create_number(env, val, &value);
   if (status != napi_ok) throw Error::New(env);
@@ -343,14 +347,14 @@ inline double Number::DoubleValue() const {
 // String class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline String String::New(Napi::Env env, const char* val, int length) {
+inline String String::New(Node::Env env, const char* val, int length) {
   napi_value value;
   napi_status status = napi_create_string_utf8(env, val, length, &value);
   if (status != napi_ok) throw Error::New(env);
   return String(env, value);
 }
 
-inline String String::New(Napi::Env env, const char16_t* val, int length) {
+inline String String::New(Node::Env env, const char16_t* val, int length) {
   napi_value value;
   napi_status status = napi_create_string_utf16(env, val, length, &value);
   if (status != napi_ok) throw Error::New(env);
@@ -399,7 +403,7 @@ inline std::u16string String::Utf16Value() const {
 // Object class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Object Object::New(Napi::Env env) {
+inline Object Object::New(Node::Env env) {
   napi_value value;
   napi_status status = napi_create_object(env, &value);
   if (status != napi_ok) throw Error::New(env);
@@ -510,7 +514,7 @@ inline bool Object::InstanceOf(const Function& constructor) const {
 // External class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline External External::New(Napi::Env env, void* data, napi_finalize finalizeCallback) {
+inline External External::New(Node::Env env, void* data, napi_finalize finalizeCallback) {
   napi_value value;
   napi_status status = napi_create_external(env, data, finalizeCallback, &value);
   if (status != napi_ok) throw Error::New(env);
@@ -536,14 +540,14 @@ inline void* External::Data() const {
 // Array class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Array Array::New(Napi::Env env) {
+inline Array Array::New(Node::Env env) {
   napi_value value;
   napi_status status = napi_create_array(env, &value);
   if (status != napi_ok) throw Error::New(env);
   return Array(env, value);
 }
 
-inline Array Array::New(Napi::Env env, int length) {
+inline Array Array::New(Node::Env env, int length) {
   napi_value value;
   napi_status status = napi_create_array_with_length(env, length, &value);
   if (status != napi_ok) throw Error::New(env);
@@ -606,7 +610,7 @@ inline void Array::Set(uint32_t index, double numberValue) {
 // ArrayBuffer class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline ArrayBuffer ArrayBuffer::New(Napi::Env env, size_t byteLength) {
+inline ArrayBuffer ArrayBuffer::New(Node::Env env, size_t byteLength) {
   napi_value value;
   void* data;
   napi_status status = napi_create_arraybuffer(env, byteLength, &data, &value);
@@ -618,7 +622,7 @@ inline ArrayBuffer ArrayBuffer::New(Napi::Env env, size_t byteLength) {
   return arrayBuffer;
 }
 
-inline ArrayBuffer ArrayBuffer::New(Napi::Env env,
+inline ArrayBuffer ArrayBuffer::New(Node::Env env,
                                     void* externalData,
                                     size_t byteLength,
                                     napi_finalize finalizeCallback) {
@@ -724,7 +728,7 @@ inline ArrayBuffer TypedArray::ArrayBuffer() const {
   napi_status status = napi_get_typedarray_info(
     _env, _value, nullptr, nullptr, nullptr, &arrayBuffer, nullptr);
   if (status != napi_ok) throw Error::New(Env());
-  return Napi::ArrayBuffer(_env, arrayBuffer);
+  return Node::ArrayBuffer(_env, arrayBuffer);
 }
 
 inline Int8Array TypedArray::AsInt8Array() const {
@@ -768,15 +772,15 @@ inline Float64Array TypedArray::AsFloat64Array() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T, napi_typedarray_type A>
-inline TypedArray_<T,A> TypedArray_<T,A>::New(Napi::Env env, size_t elementLength) {
-  Napi::ArrayBuffer arrayBuffer = Napi::ArrayBuffer::New(env, elementLength * sizeof(T));
+inline TypedArray_<T,A> TypedArray_<T,A>::New(Node::Env env, size_t elementLength) {
+  Node::ArrayBuffer arrayBuffer = Node::ArrayBuffer::New(env, elementLength * sizeof(T));
   return New(env, elementLength, arrayBuffer, 0);
 }
 
 template <typename T, napi_typedarray_type A>
-inline TypedArray_<T,A> TypedArray_<T,A>::New(Napi::Env env,
+inline TypedArray_<T,A> TypedArray_<T,A>::New(Node::Env env,
                                               size_t elementLength,
-                                              Napi::ArrayBuffer arrayBuffer,
+                                              Node::ArrayBuffer arrayBuffer,
                                               size_t bufferOffset) {
   napi_value value;
   napi_status status = napi_create_typedarray(
@@ -827,7 +831,7 @@ inline const T* TypedArray_<T,A>::Data() const {
 // Function class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Function Function::New(Napi::Env env,
+inline Function Function::New(Node::Env env,
                               VoidFunctionCallback cb,
                               const char* utf8name,
                               void* data) {
@@ -842,7 +846,7 @@ inline Function Function::New(Napi::Env env,
   return Function(env, value);
 }
 
-inline Function Function::New(Napi::Env env,
+inline Function Function::New(Node::Env env,
                               FunctionCallback cb,
                               const char* utf8name,
                               void* data) {
@@ -857,14 +861,14 @@ inline Function Function::New(Napi::Env env,
   return Function(env, value);
 }
 
-inline Function Function::New(Napi::Env env,
+inline Function Function::New(Node::Env env,
                               VoidFunctionCallback cb,
                               const std::string& utf8name,
                               void* data) {
   return New(env, cb, utf8name.c_str(), data);
 }
 
-inline Function Function::New(Napi::Env env,
+inline Function Function::New(Node::Env env,
                               FunctionCallback cb,
                               const std::string& utf8name,
                               void* data) {
@@ -945,7 +949,7 @@ inline void Function::VoidFunctionCallbackWrapper(napi_env env, napi_callback_in
     callbackData->functionCallback(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -960,7 +964,7 @@ inline void Function::FunctionCallbackWrapper(napi_env env, napi_callback_info i
     result = callbackData->functionCallback(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -982,7 +986,7 @@ inline Function::CallbackData::CallbackData(FunctionCallback cb, void* data)
 // Buffer class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Buffer Buffer::New(Napi::Env env, size_t length) {
+inline Buffer Buffer::New(Node::Env env, size_t length) {
   napi_value value;
   char* data;
   napi_status status = napi_create_buffer(env, length, &data, &value);
@@ -990,14 +994,14 @@ inline Buffer Buffer::New(Napi::Env env, size_t length) {
   return Buffer(env, value, length, data);
 }
 
-inline Buffer Buffer::New(Napi::Env env, char* data, size_t length, napi_finalize finalizeCallback) {
+inline Buffer Buffer::New(Node::Env env, char* data, size_t length, napi_finalize finalizeCallback) {
   napi_value value;
   napi_status status = napi_create_external_buffer(env, length, data, finalizeCallback, &value);
   if (status != napi_ok) throw Error::New(env);
   return Buffer(env, value, length, data);
 }
 
-inline Buffer Buffer::Copy(Napi::Env env, const char* data, size_t size) {
+inline Buffer Buffer::Copy(Node::Env env, const char* data, size_t size) {
   napi_value value;
   napi_status status = napi_create_buffer_copy(env, data, size, &value);
   if (status != napi_ok) throw Error::New(env);
@@ -1037,7 +1041,7 @@ inline char* Buffer::Data() const {
 // Error class
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Error Error::New(Napi::Env env) {
+inline Error Error::New(Node::Env env) {
   napi_value error = nullptr;
   if (env.IsExceptionPending()) {
     napi_get_and_clear_last_exception(env, &error);
@@ -1073,7 +1077,7 @@ inline Error Error::New(Napi::Env env) {
   return Error(env, error);
 }
 
-inline Error Error::New(Napi::Env env, const char* message) {
+inline Error Error::New(Node::Env env, const char* message) {
   napi_value str;
   napi_status status = napi_create_string_utf8(env, message, -1, &str);
   if (status != napi_ok) throw Error::New(env);
@@ -1085,7 +1089,7 @@ inline Error Error::New(Napi::Env env, const char* message) {
   return Error(env, error);
 }
 
-inline Error Error::New(Napi::Env env, const std::string& message) {
+inline Error Error::New(Node::Env env, const std::string& message) {
   return New(env, message.c_str());
 }
 
@@ -1116,7 +1120,7 @@ inline const char* Error::what() const {
   return Message().c_str();
 }
 
-inline TypeError TypeError::New(Napi::Env env, const char* message) {
+inline TypeError TypeError::New(Node::Env env, const char* message) {
   napi_value str;
   napi_status status = napi_create_string_utf8(env, message, -1, &str);
   if (status != napi_ok) throw Error::New(env);
@@ -1128,7 +1132,7 @@ inline TypeError TypeError::New(Napi::Env env, const char* message) {
   return TypeError(env, error);
 }
 
-inline TypeError TypeError::New(Napi::Env env, const std::string& message) {
+inline TypeError TypeError::New(Node::Env env, const std::string& message) {
   return New(env, message.c_str());
 }
 
@@ -1138,7 +1142,7 @@ inline TypeError::TypeError() : Error() {
 inline TypeError::TypeError(napi_env env, napi_value value) : Error(env, value) {
 }
 
-inline RangeError RangeError::New(Napi::Env env, const char* message) {
+inline RangeError RangeError::New(Node::Env env, const char* message) {
   napi_value str;
   napi_status status = napi_create_string_utf8(env, message, -1, &str);
   if (status != napi_ok) throw Error::New(env);
@@ -1150,7 +1154,7 @@ inline RangeError RangeError::New(Napi::Env env, const char* message) {
   return RangeError(env, error);
 }
 
-inline RangeError RangeError::New(Napi::Env env, const std::string& message) {
+inline RangeError RangeError::New(Node::Env env, const std::string& message) {
   return New(env, message.c_str());
 }
 
@@ -1175,7 +1179,7 @@ inline Reference<T> Reference<T>::New(const T& value, int initialRefcount) {
 
   napi_ref ref;
   napi_status status = napi_create_reference(env, value, initialRefcount, &ref);
-  if (status != napi_ok) throw Error::New(Napi::Env(env));
+  if (status != napi_ok) throw Error::New(Node::Env(env));
 
   return Reference<T>(env, ref);
 }
@@ -1236,7 +1240,7 @@ inline bool Reference<T>::operator !=(const Reference<T> &other) const {
 
 template <typename T>
 inline Env Reference<T>::Env() const {
-  return Napi::Env(_env);
+  return Node::Env(_env);
 }
 
 template <typename T>
@@ -1346,7 +1350,7 @@ inline CallbackInfo::~CallbackInfo() {
 }
 
 inline Env CallbackInfo::Env() const {
-  return Napi::Env(_env);
+  return Node::Env(_env);
 }
 
 inline int CallbackInfo::Length() const {
@@ -1390,7 +1394,7 @@ inline T* ObjectWrap<T>::Unwrap(Object wrapper) {
 
 template <typename T>
 inline Function ObjectWrap<T>::DefineClass(
-    Napi::Env env,
+    Node::Env env,
     const char* utf8name,
     const std::vector<ClassPropertyDescriptor<T>>& properties,
     void* data) {
@@ -1513,7 +1517,7 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::InstanceAccessor(
 
 template <typename T>
 inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticValue(const char* utf8name,
-    Napi::Value value, napi_property_attributes attributes) {
+    Node::Value value, napi_property_attributes attributes) {
   napi_property_descriptor desc = { utf8name };
   desc.value = value;
   desc.attributes = static_cast<napi_property_attributes>(attributes | napi_static_property);
@@ -1523,7 +1527,7 @@ inline ClassPropertyDescriptor<T> ObjectWrap<T>::StaticValue(const char* utf8nam
 template <typename T>
 inline ClassPropertyDescriptor<T> ObjectWrap<T>::InstanceValue(
     const char* utf8name,
-    Napi::Value value,
+    Node::Value value,
     napi_property_attributes attributes) {
   napi_property_descriptor desc = { utf8name };
   desc.value = value;
@@ -1552,7 +1556,7 @@ inline void ObjectWrap<T>::ConstructorCallbackWrapper(
     wrapper = callbackInfo.This();
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1580,7 +1584,7 @@ inline void ObjectWrap<T>::StaticVoidMethodCallbackWrapper(
     callbackData->staticVoidMethodCallback(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1599,7 +1603,7 @@ inline void ObjectWrap<T>::StaticMethodCallbackWrapper(
     result = callbackData->staticMethodCallback(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1621,7 +1625,7 @@ inline void ObjectWrap<T>::StaticGetterCallbackWrapper(
     result = callbackData->staticGetterCallback(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1642,7 +1646,7 @@ inline void ObjectWrap<T>::StaticSetterCallbackWrapper(
     callbackData->staticSetterCallback(callbackInfo, callbackInfo[0]);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1662,7 +1666,7 @@ inline void ObjectWrap<T>::InstanceVoidMethodCallbackWrapper(
     (instance->*cb)(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1683,7 +1687,7 @@ inline void ObjectWrap<T>::InstanceMethodCallbackWrapper(
     result = (instance->*cb)(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1707,7 +1711,7 @@ inline void ObjectWrap<T>::InstanceGetterCallbackWrapper(
     result = (instance->*cb)(callbackInfo);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1730,7 +1734,7 @@ inline void ObjectWrap<T>::InstanceSetterCallbackWrapper(
     (instance->*cb)(callbackInfo, callbackInfo[0]);
   }
   catch (const Error& e) {
-    if (!Napi::Env(env).IsExceptionPending()) {
+    if (!Node::Env(env).IsExceptionPending()) {
       e.ThrowAsJavaScriptException();
     }
     return;
@@ -1751,7 +1755,7 @@ inline HandleScope::HandleScope(napi_env env, napi_handle_scope scope)
     : _env(env), _scope(scope) {
 }
 
-inline HandleScope::HandleScope(Napi::Env env) : _env(env) {
+inline HandleScope::HandleScope(Node::Env env) : _env(env) {
   napi_status status = napi_open_handle_scope(_env, &_scope);
   if (status != napi_ok) throw Error::New(Env());
 }
@@ -1765,7 +1769,7 @@ inline HandleScope::operator napi_handle_scope() const {
 }
 
 inline Env HandleScope::Env() const {
-  return Napi::Env(_env);
+  return Node::Env(_env);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1776,7 +1780,7 @@ inline EscapableHandleScope::EscapableHandleScope(
   napi_env env, napi_escapable_handle_scope scope) : _env(env), _scope(scope) {
 }
 
-inline EscapableHandleScope::EscapableHandleScope(Napi::Env env) : _env(env) {
+inline EscapableHandleScope::EscapableHandleScope(Node::Env env) : _env(env) {
   napi_status status = napi_open_escapable_handle_scope(_env, &_scope);
   if (status != napi_ok) throw Error::New(Env());
 }
@@ -1790,7 +1794,7 @@ inline EscapableHandleScope::operator napi_escapable_handle_scope() const {
 }
 
 inline Env EscapableHandleScope::Env() const {
-  return Napi::Env(_env);
+  return Node::Env(_env);
 }
 
 inline Value EscapableHandleScope::Escape(Value escapee) {
@@ -1802,4 +1806,4 @@ inline Value EscapableHandleScope::Escape(Value escapee) {
 
 } // namespace Napi
 
-#endif // SRC_NAPI_INL_H_
+#endif // SRC_NODE_API_INL_H_

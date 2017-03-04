@@ -1,21 +1,21 @@
-﻿#ifndef SRC_NAPI_H_
-#define SRC_NAPI_H_
+﻿#ifndef SRC_NODE_API_H_
+#define SRC_NODE_API_H_
 
 ////////////////////////////////////////////////////////////////////////////////
-// NAPI C++ Wrapper Classes
+// Node API C++ Wrapper Classes
 //
-// These classes wrap the "NAPI" ABI-stable C APIs for Node.js, providing a
-// C++ object model and C++ exception-handling semantics with low overhead.
+// These classes wrap the "Node API" ABI-stable C APIs for Node.js, providing
+// a C++ object model and C++ exception-handling semantics with low overhead.
 // The wrappers are all header-only so that they do not affect the ABI.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "node_jsvmapi.h"
-#include "node_asyncapi.h"
+#include "abi-stable-node.h"
+#include "abi-stable-node-async.h"
 #include <string>
 #include <vector>
 #include <functional>
 
-namespace Napi {
+namespace Node {
 
   class Value;
   class Boolean;
@@ -114,9 +114,9 @@ namespace Napi {
     bool IsFunction() const;
     bool IsBuffer() const;
 
-    // Use As<T> to convert to another type of Napi::Value, when the actual type is
+    // Use As<T> to convert to another type of Node::Value, when the actual type is
     // known or assumed. This conversion does NOT very the type. But calling any methods
-    // inappropriate for the actual value type will cause Napi::Errors to be thrown.
+    // inappropriate for the actual value type will cause Node::Errors to be thrown.
     template <typename T> T As() const;
 
     Boolean ToBoolean() const;
@@ -131,7 +131,7 @@ namespace Napi {
 
   class Boolean : public Value {
   public:
-    static Boolean New(Napi::Env env, bool val);
+    static Boolean New(Node::Env env, bool val);
 
     Boolean();
     Boolean(napi_env env, napi_value value);
@@ -143,7 +143,7 @@ namespace Napi {
 
   class Number : public Value {
   public:
-    static Number New(Napi::Env env, double val);
+    static Number New(Node::Env env, double val);
 
     Number();
     Number(napi_env env, napi_value value);
@@ -163,10 +163,10 @@ namespace Napi {
 
   class String : public Value {
   public:
-    static String New(Napi::Env env, const std::string& value);
-    static String New(Napi::Env env, const std::u16string& value);
-    static String New(Napi::Env env, const char* val, int length = -1);
-    static String New(Napi::Env env, const char16_t* val, int length = -1);
+    static String New(Node::Env env, const std::string& value);
+    static String New(Node::Env env, const std::u16string& value);
+    static String New(Node::Env env, const char* val, int length = -1);
+    static String New(Node::Env env, const char16_t* val, int length = -1);
 
     String();
     String(napi_env env, napi_value value);
@@ -179,7 +179,7 @@ namespace Napi {
 
   class Object : public Value {
   public:
-    static Object New(Napi::Env env);
+    static Object New(Node::Env env);
 
     Object();
     Object(napi_env env, napi_value value);
@@ -210,7 +210,7 @@ namespace Napi {
 
   class External : public Value {
   public:
-    static External New(Napi::Env env, void* data, napi_finalize finalizeCallback = nullptr);
+    static External New(Node::Env env, void* data, napi_finalize finalizeCallback = nullptr);
 
     External();
     External(napi_env env, napi_value value);
@@ -220,8 +220,8 @@ namespace Napi {
 
   class Array : public Object {
   public:
-    static Array New(Napi::Env env);
-    static Array New(Napi::Env env, int length);
+    static Array New(Node::Env env);
+    static Array New(Node::Env env, int length);
 
     Array();
     Array(napi_env env, napi_value value);
@@ -240,8 +240,8 @@ namespace Napi {
 
   class ArrayBuffer : public Object {
   public:
-    static ArrayBuffer New(Napi::Env env, size_t byteLength);
-    static ArrayBuffer New(Napi::Env env,
+    static ArrayBuffer New(Node::Env env, size_t byteLength);
+    static ArrayBuffer New(Node::Env env,
                            void* externalData,
                            size_t byteLength,
                            napi_finalize finalizeCallback);
@@ -292,10 +292,10 @@ namespace Napi {
   template <typename T, napi_typedarray_type A>
   class TypedArray_ : public TypedArray {
   public:
-    static TypedArray_ New(Napi::Env env, size_t elementLength);
-    static TypedArray_ New(Napi::Env env,
+    static TypedArray_ New(Node::Env env, size_t elementLength);
+    static TypedArray_ New(Node::Env env,
                            size_t elementLength,
-                           Napi::ArrayBuffer arrayBuffer,
+                           Node::ArrayBuffer arrayBuffer,
                            size_t bufferOffset);
 
     TypedArray_();
@@ -315,19 +315,19 @@ namespace Napi {
 
   class Function : public Object {
   public:
-    static Function New(Napi::Env env,
+    static Function New(Node::Env env,
                         VoidFunctionCallback cb,
                         const char* utf8name = nullptr,
                         void* data = nullptr);
-    static Function New(Napi::Env env,
+    static Function New(Node::Env env,
                         FunctionCallback cb,
                         const char* utf8name = nullptr,
                         void* data = nullptr);
-    static Function New(Napi::Env env,
+    static Function New(Node::Env env,
                         VoidFunctionCallback cb,
                         const std::string& utf8name,
                         void* data = nullptr);
-    static Function New(Napi::Env env,
+    static Function New(Node::Env env,
                         FunctionCallback cb,
                         const std::string& utf8name,
                         void* data = nullptr);
@@ -341,7 +341,7 @@ namespace Napi {
     Value Call(Object& recv, const std::vector<Value>& args) const;
     Value MakeCallback(const std::vector<Value>& args) const;
     Value MakeCallback(Value& recv, const std::vector<Value>& args) const;
-    Object New(const std::vector<Napi::Value>& args);
+    Object New(const std::vector<Node::Value>& args);
 
   private:
     static void VoidFunctionCallbackWrapper(napi_env env, napi_callback_info info);
@@ -360,9 +360,9 @@ namespace Napi {
 
   class Buffer : public Object {
   public:
-    static Buffer New(Napi::Env env, size_t length);
-    static Buffer New(Napi::Env env, char* data, size_t length, napi_finalize finalizeCallback);
-    static Buffer Copy(Napi::Env env, const char* data, size_t length);
+    static Buffer New(Node::Env env, size_t length);
+    static Buffer New(Node::Env env, char* data, size_t length, napi_finalize finalizeCallback);
+    static Buffer Copy(Node::Env env, const char* data, size_t length);
 
     Buffer();
     Buffer(napi_env env, napi_value value);
@@ -382,43 +382,43 @@ namespace Napi {
    *
    * If a NAPI API call fails without executing any JavaScript code (for example due
    * to an invalid argument), then the NAPI wrapper automatically converts and throws
-   * the error as a C++ exception of type Napi::Error.
+   * the error as a C++ exception of type Node::Error.
    *
    * If a JavaScript function called by C++ code via NAPI throws a JavaScript exception,
    * then the NAPI wrapper automatically converts and throws it as a C++ exception of type
-   * Napi::Error.
+   * Node::Error.
    *
-   * If a C++ exception of type Napi::Error escapes from a NAPI C++ callback, then
+   * If a C++ exception of type Node::Error escapes from a NAPI C++ callback, then
    * the NAPI wrapper automatically converts and throws it as a JavaScript exception.
    *
-   * Catching a C++ exception of type Napi::Error also clears the JavaScript exception.
+   * Catching a C++ exception of type Node::Error also clears the JavaScript exception.
    * Of course it may be then re-thrown, which restores the JavaScript exception.
    *
    * Example 1 - Throwing an exception:
    *
-   *   Napi::Env env = ...
+   *   Node::Env env = ...
    *   throw env.NewError("Example exception");
    *   // Following C++ statements will not be executed.
-   *   // The exception will bubble up as a C++ exception of type Napi::Error,
+   *   // The exception will bubble up as a C++ exception of type Node::Error,
    *   // until it is either caught while still in C++, or else automatically
    *   // re-thrown as a JavaScript exception when the callback returns to JavaScript.
    *
    * Example 2 - Ignoring a NAPI exception:
    *
-   *   Napi::Function jsFunctionThatThrows = someObj.AsFunction();
+   *   Node::Function jsFunctionThatThrows = someObj.AsFunction();
    *   jsFunctionThatThrows({ arg1, arg2 });
    *   // Following C++ statements will not be executed.
-   *   // The exception will bubble up as a C++ exception of type Napi::Error,
+   *   // The exception will bubble up as a C++ exception of type Node::Error,
    *   // until it is either caught while still in C++, or else automatically
    *   // re-thrown as a JavaScript exception when the callback returns to JavaScript.
    *
    * Example 3 - Handling a NAPI exception:
    *
-   *   Napi::Function jsFunctionThatThrows = someObj.AsFunction();
+   *   Node::Function jsFunctionThatThrows = someObj.AsFunction();
    *   try {
    *      jsFunctionThatThrows({ arg1, arg2 });
    *   }
-   *   catch (const Napi::Error& e) {
+   *   catch (const Node::Error& e) {
    *     cerr << "Caught JavaScript exception: " + e.what();
    *     // Since the exception was caught here, it will not be re-thrown as
    *     // a JavaScript exception.
@@ -426,9 +426,9 @@ namespace Napi {
    */
   class Error : public Object, public std::exception {
   public:
-    static Error New(Napi::Env env);
-    static Error New(Napi::Env env, const char* message);
-    static Error New(Napi::Env env, const std::string& message);
+    static Error New(Node::Env env);
+    static Error New(Node::Env env, const char* message);
+    static Error New(Node::Env env, const std::string& message);
 
     Error();
     Error(napi_env env, napi_value value);
@@ -444,8 +444,8 @@ namespace Napi {
 
   class TypeError : public Error {
   public:
-    static TypeError New(Napi::Env env, const char* message);
-    static TypeError New(Napi::Env env, const std::string& message);
+    static TypeError New(Node::Env env, const char* message);
+    static TypeError New(Node::Env env, const std::string& message);
 
     TypeError();
     TypeError(napi_env env, napi_value value);
@@ -453,8 +453,8 @@ namespace Napi {
 
   class RangeError : public Error {
   public:
-    static RangeError New(Napi::Env env, const char* message);
-    static RangeError New(Napi::Env env, const std::string& message);
+    static RangeError New(Node::Env env, const char* message);
+    static RangeError New(Node::Env env, const std::string& message);
 
     RangeError();
     RangeError(napi_env env, napi_value value);
@@ -577,23 +577,23 @@ namespace Napi {
    *
    * Example:
    *
-   *   class Example: public Napi::ObjectWrap<Example> {
+   *   class Example: public Node::ObjectWrap<Example> {
    *   public:
-   *     static void Initialize(Napi::Env& env, Napi::Object& target) {
-   *       Napi::Function constructor = DefineClass(env, "Example", New, {
+   *     static void Initialize(Node::Env& env, Node::Object& target) {
+   *       Node::Function constructor = DefineClass(env, "Example", New, {
    *         InstanceAccessor("value", &GetValue, &SetValue),
    *         InstanceMethod("doSomething", &DoSomething),
    *       });
    *       target.Set("Example", constructor);
    *     }
    *
-   *     static Example* New(const Napi::CallbackInfo& info) {
+   *     static Example* New(const Node::CallbackInfo& info) {
    *       return new Example();
    *     }
    *
-   *     Napi::Value GetValue(const Napi::CallbackInfo& info);
-   *     void SetValue(const Napi::CallbackInfo& info, const Napi::Value& value);
-   *     Napi::Value DoSomething(const Napi::CallbackInfo& info);
+   *     Node::Value GetValue(const Node::CallbackInfo& info);
+   *     void SetValue(const Node::CallbackInfo& info, const Node::Value& value);
+   *     Node::Value DoSomething(const Node::CallbackInfo& info);
    *   }
    */
   template <typename T>
@@ -605,17 +605,17 @@ namespace Napi {
 
     // Methods exposed to JavaScript must conform to one of these callback signatures.
     typedef void (*StaticVoidMethodCallback)(const CallbackInfo& info);
-    typedef Napi::Value (*StaticMethodCallback)(const CallbackInfo& info);
-    typedef Napi::Value (*StaticGetterCallback)(const CallbackInfo& info);
-    typedef void (*StaticSetterCallback)(const CallbackInfo& info, const Napi::Value& value);
+    typedef Node::Value (*StaticMethodCallback)(const CallbackInfo& info);
+    typedef Node::Value (*StaticGetterCallback)(const CallbackInfo& info);
+    typedef void (*StaticSetterCallback)(const CallbackInfo& info, const Node::Value& value);
     typedef void (T::*InstanceVoidMethodCallback)(const CallbackInfo& info);
-    typedef Napi::Value (T::*InstanceMethodCallback)(const CallbackInfo& info);
-    typedef Napi::Value (T::*InstanceGetterCallback)(const CallbackInfo& info);
-    typedef void (T::*InstanceSetterCallback)(const CallbackInfo& info, const Napi::Value& value);
+    typedef Node::Value (T::*InstanceMethodCallback)(const CallbackInfo& info);
+    typedef Node::Value (T::*InstanceGetterCallback)(const CallbackInfo& info);
+    typedef void (T::*InstanceSetterCallback)(const CallbackInfo& info, const Node::Value& value);
 
     typedef ClassPropertyDescriptor<T> PropertyDescriptor;
 
-    static Function DefineClass(Napi::Env env,
+    static Function DefineClass(Node::Env env,
                                 const char* utf8name,
                                 const std::vector<PropertyDescriptor>& properties,
                                 void* data = nullptr);
@@ -646,10 +646,10 @@ namespace Napi {
                                                napi_property_attributes attributes = napi_default,
                                                void* data = nullptr);
     static PropertyDescriptor StaticValue(const char* utf8name,
-                                          Napi::Value value,
+                                          Node::Value value,
                                           napi_property_attributes attributes = napi_default);
     static PropertyDescriptor InstanceValue(const char* utf8name,
-                                            Napi::Value value,
+                                            Node::Value value,
                                             napi_property_attributes attributes = napi_default);
 
   private:
@@ -686,7 +686,7 @@ namespace Napi {
   class HandleScope {
   public:
     HandleScope(napi_env env, napi_handle_scope scope);
-    explicit HandleScope(Napi::Env env);
+    explicit HandleScope(Node::Env env);
     ~HandleScope();
 
     operator napi_handle_scope() const;
@@ -701,7 +701,7 @@ namespace Napi {
   class EscapableHandleScope {
   public:
     EscapableHandleScope(napi_env env, napi_escapable_handle_scope scope);
-    explicit EscapableHandleScope(Napi::Env env);
+    explicit EscapableHandleScope(Node::Env env);
     ~EscapableHandleScope();
 
     operator napi_escapable_handle_scope() const;
@@ -714,9 +714,9 @@ namespace Napi {
     napi_escapable_handle_scope _scope;
   };
 
-} // namespace Napi
+} // namespace Node
 
 // Inline implementations of all the above class methods are included here.
-#include "napi-inl.h"
+#include "node-api-inl.h"
 
-#endif // SRC_NAPI_H_
+#endif // SRC_NODE_API_H_
