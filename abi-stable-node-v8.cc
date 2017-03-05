@@ -144,12 +144,7 @@ namespace v8impl {
         _finalizeCallback(finalizeCallback),
         _finalizeData(finalizeData) {
       if (initialRefcount == 0) {
-        if (_finalizeCallback != nullptr || _deleteSelf) {
-          _persistent.SetWeak(this, FinalizeCallback, v8::WeakCallbackType::kParameter);
-        }
-        else {
-          _persistent.SetWeak();
-        }
+        _persistent.SetWeak(this, FinalizeCallback, v8::WeakCallbackType::kParameter);
         _persistent.MarkIndependent();
       }
     }
@@ -174,12 +169,7 @@ namespace v8impl {
 
     int Release() {
       if (--_refcount == 0) {
-        if (_finalizeCallback != nullptr || _deleteSelf) {
-          _persistent.SetWeak(this, FinalizeCallback, v8::WeakCallbackType::kParameter);
-        }
-        else {
-          _persistent.SetWeak();
-        }
+        _persistent.SetWeak(this, FinalizeCallback, v8::WeakCallbackType::kParameter);
         _persistent.MarkIndependent();
       }
 
@@ -191,7 +181,7 @@ namespace v8impl {
         return v8::Local<v8::Value>();
       }
       else {
-        return _persistent.Get(_isolate);
+        return v8::Local<v8::Value>::New(_isolate, _persistent);
       }
     }
 
@@ -296,7 +286,7 @@ namespace v8impl {
         cb(v8impl::JsEnvFromV8Isolate(isolate), cbinfo_wrapper);
 
         if (!TryCatch::lastException().IsEmpty()) {
-          isolate->ThrowException(TryCatch::lastException().Get(isolate));
+          isolate->ThrowException(v8::Local<v8::Value>::New(isolate, TryCatch::lastException()));
           TryCatch::lastException().Reset();
         }
       }
@@ -1619,6 +1609,7 @@ napi_status napi_wrap(napi_env e,
                       napi_ref* result) {
   NAPI_PREAMBLE(e);
   CHECK_ARG(jsObject);
+  CHECK_ARG(result);
 
   v8::Isolate *isolate = v8impl::V8IsolateFromJsEnv(e);
   v8::Local<v8::Object> obj = v8impl::V8LocalValueFromJsValue(jsObject).As<v8::Object>();
@@ -1629,19 +1620,9 @@ napi_status napi_wrap(napi_env e,
 
   obj->SetAlignedPointerInInternalField(0, nativeObj);
 
-  if (finalize_cb != nullptr) {
-    // Create a separate self-deleting reference for the finalizer callback.
-    // This ensures the finalizer is not dependent on the lifetime of the returned reference.
-    new v8impl::Reference(isolate, obj, 0, true, finalize_cb, nativeObj);
-  }
-
-  if (result != nullptr) {
-    // If a reference result was requested, create one that is separate from the reference
-    // that holds the finalizer callback. The returned reference should be deleted via
-    // napi_delete_reference() when it is no longer needed.
-    v8impl::Reference* reference = new v8impl::Reference(isolate, obj, 0, false, nullptr, nullptr);
-    *result = reinterpret_cast<napi_ref>(reference);
-  }
+  v8impl::Reference* reference =
+    new v8impl::Reference(isolate, obj, 0, false, finalize_cb, nativeObj);
+  *result = reinterpret_cast<napi_ref>(reference);
 
   return GET_RETURN_STATUS();
 }
@@ -1957,7 +1938,7 @@ napi_status napi_get_and_clear_last_exception(napi_env e, napi_value* result) {
     return napi_get_undefined(e, result);
   } else {
     *result = v8impl::JsValueFromV8LocalValue(
-      v8impl::TryCatch::lastException().Get(v8impl::V8IsolateFromJsEnv(e)));
+      v8::Local<v8::Value>::New(v8impl::V8IsolateFromJsEnv(e), v8impl::TryCatch::lastException()));
     v8impl::TryCatch::lastException().Reset();
   }
 
