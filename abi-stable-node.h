@@ -21,15 +21,7 @@
 #include <stddef.h>
 #include "abi-stable-node-types.h"
 
-#ifdef _WIN32
-# ifdef BUILDING_NODE_API
-#   define NODE_API __declspec(dllexport)
-# else
-#   define NODE_API __declspec(dllimport)
-# endif
-#else
-# define NODE_API /* nothing */
-#endif
+#define NODE_API /* nothing */
 
 namespace node {
 
@@ -42,7 +34,6 @@ NODE_API typedef void (*addon_abi_register_func)(
 
 struct napi_module {
   unsigned int nm_flags;
-  void* nm_dso_handle;
   const char* nm_filename;
   node::addon_abi_register_func nm_register_func;
   const char* nm_modname;
@@ -69,7 +60,6 @@ NODE_API void napi_module_register(napi_module* mod);
     static napi_module _module =                                      \
     {                                                                 \
       flags,                                                          \
-      NULL,                                                           \
       __FILE__,                                                       \
       (node::addon_abi_register_func)regfunc,                         \
       #modname,                                                       \

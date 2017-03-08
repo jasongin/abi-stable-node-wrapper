@@ -1,7 +1,8 @@
 {
   'targets': [
     {
-      'target_name': 'abi-stable-node',
+      'target_name': "<!(node -p \"require('./').name\")",
+      'type': 'static_library',
       'defines': [
         'BUILDING_NODE_API'
       ],
