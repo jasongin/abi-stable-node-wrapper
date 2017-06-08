@@ -1,22 +1,23 @@
 language: c++
 compiler:
-  - clang
+  #- clang
   - gcc
 # For Linux, use an Ubuntu 14 image
 dist: trusty
 os:
   - linux
-  - osx
+  #- osx
 env:
   global:
     # https://github.com/jasongin/nvs/blob/master/doc/CI.md
     - NVS_VERSION=1.2.0
+    - NVM_NODEJS_ORG_MIRROR=
   matrix:
-    - NODEJS_VERSION=node/4
-    - NODEJS_VERSION=node/6
+    #- NODEJS_VERSION=node/4
+    #- NODEJS_VERSION=node/6
     - NODEJS_VERSION=node/8
     - NODEJS_VERSION=nightly
-    - NODEJS_VERSION=chakracore-nightly
+    #- NODEJS_VERSION=chakracore-nightly
 matrix:
   fast_finish: true
   allow_failures:
@@ -53,6 +54,9 @@ before_install:
 install:
   - npm install $NPMOPT
 script:
-  - npm test $NPMOPT
+  - echo $NVM_NODEJS_ORG_MIRROR
+  - unset NVM_NODEJS_ORG_MIRROR
+  - echo $NVM_NODEJS_ORG_MIRROR
+  - npm test $NPMOPT --verbose
 after_success:
   - cpp-coveralls --gcov-options '\-lp' --build-root test/build --exclude test
