@@ -1962,7 +1962,7 @@ inline Object FunctionReference::New(const std::vector<napi_value>& args) const 
 ////////////////////////////////////////////////////////////////////////////////
 
 inline CallbackInfo::CallbackInfo(napi_env env, napi_callback_info info)
-    : _env(env), _this(nullptr), _dynamicArgs(nullptr), _data(nullptr) {
+    : _env(env), _info(info), _this(nullptr), _dynamicArgs(nullptr), _data(nullptr) {
   _argc = _staticArgCount;
   _argv = _staticArgs;
   napi_status status = napi_get_cb_info(env, info, &_argc, _argv, &_this, &_data);
@@ -1983,6 +1983,13 @@ inline CallbackInfo::~CallbackInfo() {
   if (_dynamicArgs != nullptr) {
     delete[] _dynamicArgs;
   }
+}
+
+inline bool CallbackInfo::IsConstructCall() const {
+  bool isConstructCall;
+  napi_status status = napi_is_construct_call(_env, _info, &isConstructCall);
+  NAPI_THROW_IF_FAILED(_env, status, false);
+  return isConstructCall;
 }
 
 inline Napi::Env CallbackInfo::Env() const {
